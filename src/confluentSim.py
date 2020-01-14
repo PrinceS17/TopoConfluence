@@ -276,7 +276,7 @@ class confluentSim:
         os.chdir(self.ns3_path)
         os.system('./waf build')
 
-        for N in range(self.N_min, self.N_max):
+        for N in range(self.N_min, self.N_max + 1):
             self.structure[N] = {}
             
             procs = []          # multiprocessing all M * len(rngs) for each N
