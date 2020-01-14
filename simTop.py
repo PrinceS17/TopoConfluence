@@ -75,11 +75,11 @@ if __name__ == "__main__":
     assert 'topo-parse.py' in test_ls('src')
     fnss_path = os.path.join(root_folder, 'src', 'topo-parse.py')
     print(os.getcwd())
-    os.chdir('TopoSurfer')
-    if 'topologyzoo' in test_ls():
-        topo_path = os.path.join(root_folder, 'TopoSurfer', 'topologyzoo')
-    else:
-        topo_path = 'download'      # enable the download of ITZ in topoSurfer.py
+    topo_path = 'download'      # enable the download of ITZ in topoSurfer.py
+    if 'TopoSurfer' in test_ls():
+        os.chdir('TopoSurfer')
+        if 'topologyzoo' in test_ls():
+            topo_path = os.path.join(root_folder, 'TopoSurfer', 'topologyzoo')     
 
     # topoSurfer
     os.chdir(root_folder)
