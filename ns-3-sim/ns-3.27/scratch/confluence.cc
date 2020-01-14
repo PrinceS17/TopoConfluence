@@ -320,7 +320,7 @@ int main (int argc, char *argv[])
     string infoFile;
     string topoFile;
     bool isCross = true;
-    double tRate = 100;             // 100Mbps for target flows
+    double tRate = 200;             // 200Mbps for target flows
     double cRate = 1000;            // 1Gbps for cross traffic
 
     CommandLine cmd;

@@ -205,7 +205,7 @@ class confluentSim:
         # (tool) run single run of ns3, given mode and flow_info file
         # currently mixing in multi-processing context
         os.chdir(self.ns3_path)
-        args = { 'mid':mid, 'nFlow':N_flow, 'flowInfo':flow_info, 'topo':topo, 'tStop':30}
+        args = { 'mid':mid, 'nFlow':N_flow, 'flowInfo':flow_info, 'topo':topo, 'tStop':tStop}
         arg_str = ''
         for k in args:
             arg_str += ' -%s=%s' % (k, args[k])
@@ -230,7 +230,7 @@ class confluentSim:
             return
         if l:
             l.acquire()
-        c = input('==>> ns-3 isn\'t healthy now! Do you want to continue (otherwise stop) ? (y/n) \n')
+        c = input('==>> ns-3 isn\'t healthy now! Do you want to continue (otherwise stop) ? (y/n)')
         if c != 'y':
             exit(1)
         if l:
@@ -247,9 +247,10 @@ class confluentSim:
         os.system('cp %s/log_confluence_%s.txt log' % (self.ns3_path, mid))
         if out.find('cp: cannot stat') != -1:
             return False
+        return True
 
     
-    def top(self, dry_run=False, multi_proc=True, capping=False):
+    def top(self, dry_run=False, multi_proc=True, capping=False, segment=4):
         # call all above and get the things done
         # generate clear dict for all parameters, then export json to infer
         # corresponding MIDs
@@ -308,7 +309,6 @@ class confluentSim:
                 
             # segmented multiprocessing
             T_total = 0
-            segment = 4
             p_tmp = []
             for p in procs:
                 p_tmp.append(p)
@@ -319,7 +319,8 @@ class confluentSim:
                         if T_total >= self.T_cap and capping:
                             q.terminate()
                             continue
-                        while q.join(60) is None:
+                        while q.is_alive():
+                            q.join(60)
                             T_total += 60
                     p_tmp = []
                     T_total = 0
@@ -343,7 +344,8 @@ class confluentSim:
 
 
 def print_help():
-    help_msg = 'Usage: python3 %s -r MIN:MAX -x XML_FILE_PATH -h' % sys.argv[0]
+    help_msg = 'Usage: python3 %s -r MIN:MAX -x XML_FILE_PATH -c PROCESS_NUM -h' \
+        % sys.argv[0]
     print(help_msg)
     exit(1)
 
@@ -489,7 +491,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print_help()
 
-    opt_map = {'-r':'1:2', '-x':None}
+    opt_map = {'-r':'1:2', '-x':None, '-c':4}
     cur_opt = None
     for arg in sys.argv[1:]:
         if arg == '-h':
@@ -503,8 +505,9 @@ if __name__ == "__main__":
             exit(1)
     
     xml_path = opt_map['-x']
+    N_core = int(opt_map['-c'])
     N_range = [int(n) for n in opt_map['-r'].split(':')]
     N_node = get_num_from_xml(xml_path)
     csim = confluentSim(N_range, N_node, xml_path)
-    csim.top()
+    csim.top(segment=N_core)
 
