@@ -80,7 +80,7 @@ class confluentSim:
         self.xml_path = xml_path
         if root_folder:
             os.chdir(root_folder)
-        self.ns3_path = ns3_path if ns3_path else '/home/sapphire/Documents/ns3_BBR/ns-3.27'
+        self.ns3_path = ns3_path if ns3_path else os.path.join(os.getcwd(), 'ns-3-sim', 'ns-3.27')
         self.rate_path = rate_path if rate_path else os.path.join(self.ns3_path, 'MboxStatistics')
 
         rname = 'Flows' + time.strftime("_%b-%d-%H:%M:%S")
@@ -344,7 +344,7 @@ class confluentSim:
 
 
 def print_help():
-    help_msg = 'Usage: python3 %s -r MIN:MAX -x XML_FILE_PATH -c PROCESS_NUM -h' \
+    help_msg = 'Usage: python3 %s -r MIN:MAX -c PROCESS_NUM -x XML_FILE_PATH -n NS3_PATH -h' \
         % sys.argv[0]
     print(help_msg)
     exit(1)
@@ -491,7 +491,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print_help()
 
-    opt_map = {'-r':'1:2', '-x':None, '-c':4}
+    opt_map = {'-r':'1:2', '-c':4, '-x':None, '-n':None}
     cur_opt = None
     for arg in sys.argv[1:]:
         if arg == '-h':
@@ -505,9 +505,10 @@ if __name__ == "__main__":
             exit(1)
     
     xml_path = opt_map['-x']
+    ns3_path = opt_map['-n']
     N_core = int(opt_map['-c'])
     N_range = [int(n) for n in opt_map['-r'].split(':')]
     N_node = get_num_from_xml(xml_path)
-    csim = confluentSim(N_range, N_node, xml_path)
+    csim = confluentSim(N_range, N_node, xml_path, ns3_path=ns3_path)
     csim.top(segment=N_core)
 
