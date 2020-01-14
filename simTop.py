@@ -92,6 +92,20 @@ if __name__ == "__main__":
         print('-> TopoSurfer complete: topologies are collected and parsed.')
     except:
         print('-> TopoSurfer not complete! Exit.')
+        exit(1)
+
+    # configure ns-3
+    os.chdir(ns3_path)
+    if 'MboxStatistics' not in test_ls():
+        os.mkdir('MboxStatistics')
+        os.mkdir('MboxFig')
+    conf_cmd = 'CXXFLAGS="-Wall" ./waf configure --with-brite=../../BRITE --enable-examples --enable-sudo'
+    if not dry_run:
+        try:
+            os.system(conf_cmd)
+        except:
+            print('-> ns-3 configure error! Exit.')
+            exit(1)
 
     # confluentSim
     os.chdir(root_folder)
@@ -102,11 +116,11 @@ if __name__ == "__main__":
     xmls = test_ls(xml_folder)
     for xml in xmls:
         path = os.path.join(xml_folder, xml)
-        conf_cmd = 'python3 src/confluentSim.py -r %s -x %s -c %s' \
+        confl_cmd = 'python3 src/confluentSim.py -r %s -x %s -c %s' \
             % (opt_map['-r'], path, n_core)
         print('-> ConfluentSim begin running for %s ...\n' % xml)
         if not dry_run:
-            os.system(conf_cmd)
+            os.system(confl_cmd)
     
 
 
