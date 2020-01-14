@@ -1,0 +1,34 @@
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+# def options(opt):
+#     pass
+
+# def configure(conf):
+#     conf.check_nonfatal(header_name='stdint.h', define_name='HAVE_STDINT_H')
+
+def build(bld):
+    module = bld.create_ns3_module('minibox', ['core', 'internet', 'point-to-point', 'csma', \
+        'applications', 'network', 'traffic-control', 'tap-bridge', 'ppbp-application'])
+    module.source = [
+        'model/minibox.cc',
+        'helper/minibox-helper.cc',
+        ]
+
+    module_test = bld.create_ns3_module_test_library('minibox')
+    module_test.source = [
+        'test/minibox-test-suite.cc',
+        ]
+
+    headers = bld(features='ns3header')
+    headers.module = 'minibox'
+    headers.source = [
+        'model/minibox.h',
+        'helper/minibox-helper.h',
+        'model/tools.h'
+        ]
+
+    if bld.env.ENABLE_EXAMPLES:
+        bld.recurse('examples')
+
+    # bld.ns3_python_bindings()
+

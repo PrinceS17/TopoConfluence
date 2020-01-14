@@ -1,0 +1,18 @@
+{
+    "files.associations": {
+        "iomanip": "cpp",
+        "ostream": "cpp",
+        "iosfwd": "cpp",
+        "deque": "cpp",
+        "string": "cpp",
+        "vector": "cpp",
+        "*.ipp": "cpp",
+        "random": "cpp",
+        "cmath": "cpp",
+        "typeinfo": "cpp",
+        "*.tcc": "cpp"
+    },
+    "C_Cpp.intelliSenseEngineFallback": "Enabled",
+    "C_Cpp.dimInactiveRegions": false,
+    "git.ignoreLimitWarning": true
+}
