@@ -35,7 +35,7 @@ def test_ls(path=None):
 
 def printHelp():
     # print help message & exit
-    print('Usage: python %s [-s SAMPLE_NUM] [-c PROCESS_NUM] [-r MIN:MAX]' % sys.argv[0])
+    print('Usage: python %s [-s SAMPLE_NUM] [-c PROCESS_NUM] [-r MIN:MAX] [-h]' % sys.argv[0])
     print('       SAMPLE_NUM:   Number of topologies samples (default is 30);')
     print('       PROCESS_NUM:  Number of processes for multiprocessing (default is 8);')
     print('       MIN:MAX:      Range of number of target flows (default is 7:8).')
@@ -52,6 +52,8 @@ if __name__ == "__main__":
     for arg in sys.argv[1:]:
         if arg == '--dry-run':
             dry_run = True
+        elif arg == '-h':
+            printHelp()
         elif arg in opt_map:
             cur_option = arg
         elif cur_option in opt_map:
