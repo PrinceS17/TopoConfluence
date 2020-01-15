@@ -35,10 +35,12 @@ def test_ls(path=None):
 
 def printHelp():
     # print help message & exit
-    print('Usage: python %s [-s SAMPLE_NUM] [-c PROCESS_NUM] [-r MIN:MAX] [-h]' % sys.argv[0])
+    print('Usage: python %s [-s SAMPLE_NUM] [-c PROCESS_NUM] [-r MIN:MAX] [-p PART] \
+            [--no-parse] [--dry-run] [-h]' % sys.argv[0])
     print('       SAMPLE_NUM:   Number of topologies samples (default is 30);')
     print('       PROCESS_NUM:  Number of processes for multiprocessing (default is 8);')
-    print('       MIN:MAX:      Range of number of target flows (default is 7:8).')
+    print('       MIN:MAX:      Range of number of target flows (default is 7:8);')
+    print('       PART:         0/1/2: no partial/first half/second half of topologies. (default is 0).')
     exit(1)
 
 
@@ -46,12 +48,15 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         printHelp()
 
-    opt_map = {'-s':30, '-c':8, '-r':'7:8'}     # TODO: use option to run Brite or configure
+    opt_map = {'-s':30, '-c':8, '-r':'7:8', '-p':0}     # TODO: use option to run Brite or configure
     cur_option = None
     dry_run = False
+    no_parse = False                # should only be enabled when XML folder exists!
     for arg in sys.argv[1:]:
         if arg == '--dry-run':
             dry_run = True
+        elif arg == '--no-parse':   # used to ensure a consistent topologies set
+            no_parse = True
         elif arg == '-h':
             printHelp()
         elif arg in opt_map:
@@ -87,12 +92,15 @@ if __name__ == "__main__":
     surf_path = os.path.join(root_folder, 'src', 'topoSurfer.py')
     surf_cmd = 'python3 %s -r %s -f %s -t %s -s %s' \
         % (surf_path, root_folder, fnss_path, topo_path, n_sample)
-    try:
-        os.system(surf_cmd)
-        print('-> TopoSurfer complete: topologies are collected and parsed.')
-    except:
-        print('-> TopoSurfer not complete! Exit.')
-        exit(1)
+    if no_parse:
+        print('-> No parse option is selected, no topologies will be parsed!')
+    else:
+        try:
+            os.system(surf_cmd)
+            print('-> TopoSurfer complete: topologies are collected and parsed.')
+        except:
+            print('-> TopoSurfer not complete! Exit.')
+            exit(1)
 
     # configure BRITE for ns-3
     os.chdir(os.path.join(root_folder, 'BRITE'))
@@ -114,12 +122,20 @@ if __name__ == "__main__":
             exit(1)
 
     # confluentSim
+    n_part = opt_map['-p']
     os.chdir(root_folder)
     n_core = opt_map['-c']
     # n_min, n_max = [int(r) for r in opt_map['-r'].split(':')]
     assert 'xml' in test_ls('TopoSurfer')
     xml_folder = os.path.join(root_folder, 'TopoSurfer', 'xml')
-    xmls = test_ls(xml_folder)
+    all_xmls = test_ls(xml_folder)
+    if not n_part:
+        xmls = all_xmls
+    elif n_part == 1:
+        xmls = all_xmls[:len(all_xmls) // 2]
+    else:
+        xmls = all_xmls[len(all_xmls) // 2:]
+
     for xml in xmls:
         path = os.path.join(xml_folder, xml)
         confl_cmd = 'python3 src/confluentSim.py -r %s -x %s -c %s' \
