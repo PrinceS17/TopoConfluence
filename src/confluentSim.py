@@ -276,9 +276,11 @@ class confluentSim:
         os.chdir(self.ns3_path)
         os.system('./waf build')
 
+        T_total = 0
+        p_tmp = []
+        
         for N in range(self.N_min, self.N_max + 1):
             self.structure[N] = {}
-            
             procs = []          # multiprocessing all M * len(rngs) for each N
             lock = Lock()
             for m in range(self.M):
@@ -308,13 +310,11 @@ class confluentSim:
                     rstruct['mid'] = mid
                 
             # segmented multiprocessing
-            T_total = 0
-            p_tmp = []
             for p in procs:
                 p_tmp.append(p)
                 self.cnt += 1
                 p.start()
-                if len(p_tmp) == segment or p == procs[len(procs) - 1]:
+                if len(p_tmp) == segment:
                     for q in p_tmp:
                         if T_total >= self.T_cap and capping:
                             q.terminate()
