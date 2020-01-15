@@ -94,13 +94,19 @@ if __name__ == "__main__":
         print('-> TopoSurfer not complete! Exit.')
         exit(1)
 
+    # configure BRITE for ns-3
+    os.chdir(os.path.join(root_folder, 'BRITE'))
+    os.system('make clean')
+    os.system('make')    
+
     # configure ns-3
     os.chdir(ns3_path)
     if 'MboxStatistics' not in test_ls():
         os.mkdir('MboxStatistics')
         os.mkdir('MboxFig')
-    conf_cmd = 'CXXFLAGS="-Wall" ./waf configure --with-brite=../../BRITE --enable-examples --enable-sudo'
-    if not dry_run:
+    conf_cmd = 'CXXFLAGS="-Wall" ./waf configure --with-brite=../../BRITE --enable-examples'
+    tmp = sp.getoutput('./waf --check-config | grep Examples')
+    if not dry_run and 'enabled' not in tmp:
         try:
             os.system(conf_cmd)
         except:
