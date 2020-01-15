@@ -298,20 +298,6 @@ void printFlowRate (vdouble rate)
 }
 
 
-// in main: 
-// -- set vector<vdouble> ts, 
-// -- set target flows: src/des, leaf bw, t
-// - set cross traffic: src/des, consider how to use PBPP
-// -- collect all flow's avg rate, write into file
-
-// TODO Test
-// 1.check if correctly parse
-// 2.check flow generated
-// 3.check connection
-// 4.check mode 0 functionality
-// 5.check flow_rate file and compare to data rate figure
-
-
 int main (int argc, char *argv[])
 {
     uint32_t mid;
