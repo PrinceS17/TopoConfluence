@@ -214,7 +214,7 @@ class confluentSim:
         os.system(cmd)
 
 
-    def run_double(self, flows, leaf_bw, cross_traffic, mid, topo, l=None, single=True):
+    def run_double(self, flows, leaf_bw, cross_traffic, mid, topo, l=None, single=True, tStop=30):
         # given all info generated, run ns-3 (call tools)
         if l:
             l.acquire()
@@ -224,7 +224,7 @@ class confluentSim:
         if l:
             l.release()
         
-        self.run_single(N_flow, 1, flow_info, mid, topo)
+        self.run_single(N_flow, 1, flow_info, mid, topo, tStop=tStop)
         cres = self.collect_result(mid)            # execute here to follow internal-process dependency
         if cres:
             return
@@ -250,7 +250,7 @@ class confluentSim:
         return True
 
     
-    def top(self, dry_run=False, multi_proc=True, capping=False, segment=4):
+    def top(self, dry_run=False, multi_proc=True, capping=False, segment=4, tStop=30):
         # call all above and get the things done
         # generate clear dict for all parameters, then export json to infer
         # corresponding MIDs
@@ -300,7 +300,7 @@ class confluentSim:
                         self.run_double(flows, leaf_bw, cross_traffic, mid, self.xml_path)
                     elif not dry_run:
                         p = Process(target=self.run_double, args=(flows, leaf_bw, cross_traffic, \
-                            mid, self.xml_path, lock))
+                            mid, self.xml_path, lock, True, tStop))
                         procs.append(p)
 
                     self.structure[N][m]['data'][ri] = {}
@@ -344,8 +344,8 @@ class confluentSim:
 
 
 def print_help():
-    help_msg = 'Usage: python3 %s -r MIN:MAX -c PROCESS_NUM -x XML_FILE_PATH -n NS3_PATH -h' \
-        % sys.argv[0]
+    help_msg = 'Usage: python3 %s -r MIN:MAX -c PROCESS_NUM -x XML_FILE_PATH \
+        -n NS3_PATH -t TIME_DURATION -h' % sys.argv[0]
     print(help_msg)
     exit(1)
 
@@ -491,7 +491,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print_help()
 
-    opt_map = {'-r':'1:2', '-c':4, '-x':None, '-n':None}
+    opt_map = {'-r':'1:2', '-c':4, '-x':None, '-n':None, '-t':30}
     cur_opt = None
     for arg in sys.argv[1:]:
         if arg == '-h':
@@ -509,6 +509,7 @@ if __name__ == "__main__":
     N_core = int(opt_map['-c'])
     N_range = [int(n) for n in opt_map['-r'].split(':')]
     N_node = get_num_from_xml(xml_path)
+    tStop = int(opt_map['-t'])
     csim = confluentSim(N_range, N_node, xml_path, ns3_path=ns3_path)
-    csim.top(segment=N_core)
+    csim.top(segment=N_core, tStop=tStop)
 
