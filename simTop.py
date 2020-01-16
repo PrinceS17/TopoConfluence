@@ -39,7 +39,7 @@ def test_ls(path=None):
 def printHelp():
     # print help message & exit
     print('Usage: python %s [-s SAMPLE_NUM] [-c PROCESS_NUM] [-r MIN:MAX] [-p PART] \
-            [--no-parse] [--dry-run] [-h]' % sys.argv[0])
+            [--run-only] [--dry-run] [-h]' % sys.argv[0])
     print('       SAMPLE_NUM:   Number of topologies samples (default is 30);')
     print('       PROCESS_NUM:  Number of processes for multiprocessing (default is 8);')
     print('       MIN:MAX:      Range of number of target flows (default is 7:8);')
@@ -54,12 +54,12 @@ if __name__ == "__main__":
     opt_map = {'-s':30, '-c':8, '-r':'7:8', '-p':0}     # TODO: use option to run Brite or configure
     cur_option = None
     dry_run = False
-    no_parse = False                # should only be enabled when XML folder exists!
+    run_only = False                # should only be enabled when XML folder exists!
     for arg in sys.argv[1:]:
         if arg == '--dry-run':
             dry_run = True
-        elif arg == '--no-parse':   # used to ensure a consistent topologies set
-            no_parse = True
+        elif arg == '--run-only':   # used to ensure a consistent topologies set
+            run_only = True
         elif arg == '-h':
             printHelp()
         elif arg in opt_map:
@@ -89,31 +89,27 @@ if __name__ == "__main__":
         if 'topologyzoo' in test_ls():
             topo_path = os.path.join(root_folder, 'TopoSurfer', 'topologyzoo')     
 
-    # topoSurfer
-    os.chdir(root_folder)
-    n_sample = opt_map['-s']
-    surf_path = os.path.join(root_folder, 'src', 'topoSurfer.py')
-    surf_cmd = 'python3 %s -r %s -f %s -t %s -s %s' \
-        % (surf_path, root_folder, fnss_path, topo_path, n_sample)
-    if no_parse:
-        print('-> No parse option is selected, no topologies will be parsed!')
-    else:
-        try:
-            os.system(surf_cmd)
-            print('-> TopoSurfer complete: topologies are collected and parsed.')
-        except:
-            print('-> TopoSurfer not complete! Exit.')
-            exit(1)
+    if not run_only:
+        # topoSurfer
+        os.chdir(root_folder)
+        n_sample = opt_map['-s']
+        surf_path = os.path.join(root_folder, 'src', 'topoSurfer.py')
+        surf_cmd = 'python3 %s -r %s -f %s -t %s -s %s' \
+            % (surf_path, root_folder, fnss_path, topo_path, n_sample)
+        if run_only:
+            print('-> Run only option is selected, no topologies will be parsed!')
+        else:
+            try:
+                os.system(surf_cmd)
+                print('-> TopoSurfer complete: topologies are collected and parsed.')
+            except:
+                print('-> TopoSurfer not complete! Exit.')
+                exit(1)
 
-    # configure BRITE for ns-3
-    os.chdir(os.path.join(root_folder, 'BRITE'))
-    os.system('make clean')
-    os.system('make')
-
-    # configure BRITE for ns-3
-    os.chdir(os.path.join(root_folder, 'BRITE'))
-    os.system('make clean')
-    os.system('make')    
+        # configure BRITE for ns-3
+        os.chdir(os.path.join(root_folder, 'BRITE'))
+        os.system('make clean')
+        os.system('make')
 
     # configure ns-3
     os.chdir(ns3_path)
