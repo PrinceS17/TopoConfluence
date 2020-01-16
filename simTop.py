@@ -24,6 +24,8 @@ In detail, it will achieve the following
 
 import os, sys
 import subprocess as sp
+from multiprocessing import Process, Lock
+from src.confluentSim import confluentSim, get_num_from_xml
 
 
 def test_ls(path=None):
@@ -125,7 +127,7 @@ if __name__ == "__main__":
     n_part = opt_map['-p']
     os.chdir(root_folder)
     n_core = opt_map['-c']
-    # n_min, n_max = [int(r) for r in opt_map['-r'].split(':')]
+    n_min, n_max = [int(r) for r in opt_map['-r'].split(':')]
     assert 'xml' in test_ls('TopoSurfer')
     xml_folder = os.path.join(root_folder, 'TopoSurfer', 'xml')
     all_xmls = test_ls(xml_folder)
@@ -136,13 +138,22 @@ if __name__ == "__main__":
     else:
         xmls = all_xmls[len(all_xmls) // 2:]
 
+    # parallelize among different confluentSim.py with same lock
+    lock = Lock()
     for xml in xmls:
         path = os.path.join(xml_folder, xml)
-        confl_cmd = 'python3 src/confluentSim.py -r %s -x %s -c %s' \
-            % (opt_map['-r'], path, n_core)
-        print('-> ConfluentSim begin running for %s ...\n' % xml)
-        if not dry_run:
-            os.system(confl_cmd)
+        n_node = get_num_from_xml(path)
+        csim = confluentSim([n_min, n_max], n_node, path, ns3_path=ns3_path)
+        csim.top(segment=n_core, tStop=30, lock=lock)
+
+    # # for each xml, call confluentSim
+    # for xml in xmls:
+    #     path = os.path.join(xml_folder, xml)
+    #     confl_cmd = 'python3 src/confluentSim.py -r %s -x %s -c %s' \
+    #         % (opt_map['-r'], path, n_core)
+    #     print('-> ConfluentSim begin running for %s ...\n' % xml)
+    #     if not dry_run:
+    #         os.system(confl_cmd)
     
 
 

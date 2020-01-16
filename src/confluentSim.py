@@ -95,7 +95,7 @@ class confluentSim:
         os.mkdir('log')             # collected logs
 
         self.cobottleneck_th = 0.9  # if new_sum_rate < th * old_sum_rate, mark co-bottleneck
-        self.mid = random.randint(1000, 9999)
+        self.mid = random.randint(0, 99999999)
         self.cnt, self.N_run = 0, 0
     
 
@@ -253,7 +253,7 @@ class confluentSim:
         return True
 
     
-    def top(self, dry_run=False, multi_proc=True, capping=False, segment=4, tStop=30):
+    def top(self, dry_run=False, multi_proc=True, capping=False, segment=4, tStop=30, lock=None):
         # call all above and get the things done
         # generate clear dict for all parameters, then export json to infer
         # corresponding MIDs
@@ -281,11 +281,12 @@ class confluentSim:
 
         T_total = 0
         p_tmp = []
+        if not lock:
+            lock = Lock()
         
         for N in range(self.N_min, self.N_max + 1):
             self.structure[N] = {}
             procs = []          # multiprocessing all M * len(rngs) for each N
-            lock = Lock()
             for m in range(self.M):
                 flows = self.gen_target_flow(N, self.N_node)
 
