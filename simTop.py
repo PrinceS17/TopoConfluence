@@ -109,6 +109,11 @@ if __name__ == "__main__":
     os.system('make clean')
     os.system('make')
 
+    # configure BRITE for ns-3
+    os.chdir(os.path.join(root_folder, 'BRITE'))
+    os.system('make clean')
+    os.system('make')    
+
     # configure ns-3
     os.chdir(ns3_path)
     if 'MboxStatistics' not in test_ls():

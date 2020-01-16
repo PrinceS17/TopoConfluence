@@ -9,6 +9,12 @@ topologies/, where you replace all ".node[" with ".nodes[". The reason
 is networkx.classes.multidigraph.MultiDiGraph uses .nodes in python3
 instead of .node/.nodes. which it did in python2.)
 
+(If you want it to work under python3 as I do, you need to patch the file
+parsers.py and topology.py in .local/lib/python3.5/site-packeges/fnss/
+topologies/, where you replace all ".node[" with ".nodes[". The reason 
+is networkx.classes.multidigraph.MultiDiGraph uses .nodes in python3
+instead of .node/.nodes. which it did in python2.)
+
 Last updated:       12.31.2019      Initial tests passed.
 
 Current problem: 
