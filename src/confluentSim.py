@@ -83,7 +83,10 @@ class confluentSim:
         self.ns3_path = ns3_path if ns3_path else os.path.join(os.getcwd(), 'ns-3-sim', 'ns-3.27')
         self.rate_path = rate_path if rate_path else os.path.join(self.ns3_path, 'MboxStatistics')
 
-        rname = 'Flows' + time.strftime("_%b-%d-%H:%M:%S")
+        # rname = 'Flows_' + + time.strftime("_%b-%d-%H:%M:%S")
+        pos = xml_path.find('xml/')
+        rname = 'Flows_%s:%s_%s_%s' % (self.N_min, self.N_max, xml_path[pos + 4:], \
+            time.strftime("_%b-%d-%H:%M:%S"))
         os.mkdir(rname)
         self.root = os.path.join(os.getcwd(), rname)
         os.chdir(rname)
