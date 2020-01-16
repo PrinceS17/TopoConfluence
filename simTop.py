@@ -26,6 +26,7 @@ import os, sys
 import subprocess as sp
 from multiprocessing import Process, Lock
 from src.confluentSim import confluentSim, get_num_from_xml
+from src.find_cluster_test import find_cluster
 
 
 def test_ls(path=None):
@@ -148,8 +149,10 @@ if __name__ == "__main__":
     for xml in xmls:
         path = os.path.join(xml_folder, xml)
         n_node = get_num_from_xml(path)
-        csim = confluentSim([n_min, n_max], n_node, path, ns3_path=ns3_path)
-        csim.top(segment=n_core, tStop=30, lock=lock)
+        print('-> Scanning topology: %s' % xml)
+        if not dry_run:
+            csim = confluentSim([n_min, n_max], n_node, path, ns3_path=ns3_path)
+            csim.top(segment=n_core, tStop=30, lock=lock)
 
     # # for each xml, call confluentSim
     # for xml in xmls:
