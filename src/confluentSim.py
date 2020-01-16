@@ -87,7 +87,7 @@ class confluentSim:
         # rname = 'Flows_' + + time.strftime("_%b-%d-%H:%M:%S")
         pos = xml_path.find('xml/')
         rname = 'Flows_%s:%s_%s_%s' % (self.N_min, self.N_max, xml_path[pos + 4:], \
-            time.strftime("_%b-%d-%H:%M:%S"))
+            time.strftime("%b-%d-%H:%M:%S"))
         os.mkdir(rname)
         self.root = os.path.join(os.getcwd(), rname)
         os.chdir(rname)
@@ -329,7 +329,7 @@ class confluentSim:
                             T_total += 60
                     p_tmp = []
                     T_total = 0
-                time.sleep(30)              # magic, but works
+                time.sleep(15)              # magic, but works
 
             # all in one multiprocessing
             # for p in procs:
