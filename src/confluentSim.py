@@ -96,7 +96,7 @@ class confluentSim:
         os.mkdir('log')             # collected logs
 
         self.cobottleneck_th = 0.9  # if new_sum_rate < th * old_sum_rate, mark co-bottleneck
-        self.mid = random.randint(0, 99999999)
+        self.mid = random.randint(9999, 99999999)
         self.cnt, self.N_run = 0, 0
     
 
