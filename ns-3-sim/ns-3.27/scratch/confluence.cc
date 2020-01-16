@@ -402,7 +402,12 @@ int main (int argc, char *argv[])
         Ptr<Node> txLeaf = sim.getNode (nids[flows[i][0]]);
         Ptr<Node> rxLeaf = sim.getNode (nids[flows[i][1]]);
         NodeContainer path = findPath (txLeaf, rxLeaf, sim, nids);
-
+        if (!path.GetN ()) 
+        {
+            Shares.push_back (vdouble (edges.size (), 0));
+            continue;
+        }
+        
         stringstream ss;
         ss << "Final path of " << txLeaf->GetId () << " -> " << rxLeaf->GetId () << ": ";
         for (uint32_t k = 0; k < path.GetN (); k ++)
