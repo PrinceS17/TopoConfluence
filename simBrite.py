@@ -34,14 +34,16 @@ class Briter:
     def __init__(self, folder, path=None):
         self.folder = folder
         self.path = path if path else os.path.join(folder, 'TD_DefaultWaxman.conf')
-        with open(path, 'r') as f:
+        with open(self.path, 'r') as f:
             self.conf = f.read()
         
     def setBwInter(self, bw):
         self.conf.replace('BWInterMin = 100.0', 'BWInterMin = %s' % bw)
+        self.conf.replace('BWInterMax = 1024.0', 'BWInterMax = %s' % bw)
     
     def setBwIntra(self, bw):
         self.conf.replace('BWIntraMin = 1000.0', 'BWIntraMin = %s' % bw)
+        self.conf.replace('BWIntraMax = 4024.0', 'BWIntraMax = %s' % bw)
     
     def setAsNum(self, n):
         self.conf.replace('N = 2', 'N = %s' % n)
@@ -53,18 +55,20 @@ class Briter:
         out_path = os.path.join(self.folder, name)
         with open(out_path, 'w') as f:
             f.write(self.conf)
+        with open(self.path, 'r') as f:
+            self.conf = f.read()            # recover the conf back to default
         return out_path
 
 
 class simBrite:
     def __init__(self,
         N_range,
-        sample='TD_DefaultWaxman.conf',
+        sample=None,
         root_folder=None,
         ns3_path=None
         ):
         self.N_min, self.N_max = N_range
-        self.sample = sample
+        self.sample = sample if sample else 'TD_DefaultWaxman.conf'
         if root_folder:
             os.chdir(root_folder)
         rname = 'Brite_%s:%s_%s' % (N_range[0], N_range[1], \
@@ -126,7 +130,7 @@ class simBrite:
         os.system(cmd)
 
 
-    def top(self):
+    def top(self, tStop=30):
         # call the tools above to simulate
         
         n_leaf = 32
@@ -148,7 +152,8 @@ class simBrite:
                         rates = [n_rate, c_rate, 0]
                         is_co = self.getTruth(nums, rates, inter_bw, edge_bw)
                         os.chdir(self.ns3_path)
-                        self.runNs3(self.mid, self.bid % 20, nums, rates, edge_bw)
+                        self.runNs3(self.mid, self.bid % 20, nums, rates, edge_bw, \
+                            bpath=self.brt_path, tStop=tStop)
 
                         ftruth = 'MboxStatistics/bottleneck_%s.txt' % self.mid
                         with open(ftruth, 'a') as f:
@@ -156,3 +161,124 @@ class simBrite:
                         self.mid += 1
 
                 self.bid += 1
+
+
+def test_briter():
+    assert 'ns-3-sim' in test_ls()
+    folder = os.path.join(os.getcwd(), 'ns-3-sim', 'ns-3.27', 'brite_conf')
+    brt = Briter(folder)
+    assert 'TD_DefaultWaxman.conf' in test_ls(folder)
+    assert brt.path.find('TD_DefaultWaxman.conf') != -1
+    brt.setBwInter(1000)
+    brt.setBwIntra(999)
+    brt.setAsNum(3)
+    brt.setRouterNum(20)
+    brt.generate('TD_test.conf')
+    assert 'TD_test.conf' in test_ls(folder)
+    with open(os.path.join(folder, 'TD_test.conf'), 'r') as f:
+        tmp = f.read()
+        assert tmp.find('BWInterMin = 1000') != -1
+        assert tmp.find('BWIntraMin = 999') != -1
+        assert tmp.find('N = 3') != -1
+        assert tmp.find('N = 20') != -1
+    brt.setAsNum(4)
+    brt.generate('TD_test2.conf')
+    assert 'TD_test2.conf' in test_ls(folder)
+    with open(os.path.join(folder, 'TD_test2.conf'), 'r') as f:
+        tmp = f.read()
+        assert tmp.find('N = 4') != -1      # test we can set AS num again
+    
+    print('- Briter test passed!')
+
+
+def test_simBrite_unit():
+    # test tool functions of simBrite
+    tsb = simBrite([1,2])
+    assert tsb.root.find('Brite_1:2') != -1
+    assert os.getcwd().find('Brite_1:2') != -1    # should in Brite root now
+    print('- Root test passed.')
+
+    tsb.confBrite(1024, 5, 48)
+    bname = 'TD_conf_%s.conf' % tsb.bid
+    conf_path = os.path.join(tsb.ns3_path, 'brite_conf')
+    assert bname in test_ls(conf_path)
+    with open(os.path.join(conf_path, bname)) as f:
+        tmp = f.read()
+    assert tmp.find('BWInterMin = 1024') != -1
+    assert tmp.find('N = 5') != -1
+    print('- Brite conf test passed.')
+
+    is_co = tsb.getTruth([2,0,2], [5,10,3], 10, 10)
+    assert not is_co 
+    is_co = tsb.getTruth([4,1,0], [2,4,6], 10, 5)
+    assert is_co
+    print('- Get truth test passed.')
+
+    np = Process(target=tsb.runNs3, args=(1111, tsb.bid % 10, [4,1,0],\
+        [200,400,600], 500,))
+    print('- Running ns-3 ...')
+    time.sleep(15)
+    assert 'log_brite_1111.txt' in test_ls(tsb.ns3_path)
+    np.terminate()
+    ans = input('- Is the command above correct? (y/n) ')
+    if ans == 'y':
+        print('- NS test passed.')
+    else:
+        print('- NS test failed! Exit.')
+        exit(1)
+
+
+def test_simBrite_int():
+    # test top() of simBrite
+    tsi = simBrite([1,2])
+    mid = tsi.mid
+    np = Process(target=tsi.top, args=(1,))
+    print('- Scanning the cases...')
+    np.join(120)
+
+    dat_path = os.path.join(tsi.ns3_path, 'MboxStatistics')
+    assert 'bottleneck_%s.txt' % mid in test_ls(dat_path)
+
+    ans = input('- Is the running process normal? (y/n) ')
+    if ans == 'y':
+        print('- Top test passed.')
+    else:
+        print('- Top test failed! Exit.')
+        exit(1)
+
+
+def print_help():
+    print('Usage: python %s -r MIN:MAX -t TIME_DURATION -s SAMPLE ' % sys.argv[0])
+    print('                 -R ROOT_FOLDER -n NS3_PATH' % sys.argv[0])
+    exit(1)
+
+if __name__ == "__main__":
+    is_test = True
+
+    if is_test:
+        print('In test mode, all arguments ignored.')
+        test_briter()
+        test_simBrite_unit()
+        test_simBrite_int()
+        exit(0)
+
+    if len(sys.argv) < 2:
+        print_help()
+    
+    opt_map = {'-r':'3:4', '-s':None, '-R':None, '-n':None, '-t'}
+    cur_arg = None
+    for arg in sys.argv[1:]:
+        if arg in opt_map:
+            cur_arg = arg
+        elif cur_arg in opt_map:
+            opt_map[cur_arg] = arg
+            cur_arg = None
+        else:
+            print('No such options! Exit.')
+            exit(1)
+    
+    num = [int(n) for n in opt_map['-r'].split(':')]
+    tStop = int(opt_map['-t'])
+    simb = simBrite(num, opt_map['-s'], opt_map['-R'], opt_map['-n'])
+    simb.top()
+
