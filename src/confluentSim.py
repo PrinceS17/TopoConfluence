@@ -288,6 +288,7 @@ class confluentSim:
         for N in range(self.N_min, self.N_max + 1):
             self.structure[N] = {}
             procs = []          # multiprocessing all M * len(rngs) for each N
+            n_cross = min(self.C, N)
             for m in range(self.M):
                 flows = self.gen_target_flow(N, self.N_node)
 
@@ -298,7 +299,7 @@ class confluentSim:
    
                 for ri in range(len(self.rngs)):
                     leaf_bw = self.draw_leaf_bw(flows, ri)
-                    cross_traffic = self.gen_cross_traffic(self.C)
+                    cross_traffic = self.gen_cross_traffic(n_cross)
                     mid = self.mid
                     self.mid = self.mid % 9999 + 1
                     if not dry_run and not multi_proc:
