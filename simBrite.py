@@ -38,18 +38,18 @@ class Briter:
             self.conf = f.read()
         
     def setBwInter(self, bw):
-        self.conf.replace('BWInterMin = 100.0', 'BWInterMin = %s' % bw)
-        self.conf.replace('BWInterMax = 1024.0', 'BWInterMax = %s' % bw)
+        self.conf = self.conf.replace('BWInterMin = 100.0', 'BWInterMin = %s' % bw)
+        self.conf = self.conf.replace('BWInterMax = 1024.0', 'BWInterMax = %s' % bw)
     
     def setBwIntra(self, bw):
-        self.conf.replace('BWIntraMin = 1000.0', 'BWIntraMin = %s' % bw)
-        self.conf.replace('BWIntraMax = 4024.0', 'BWIntraMax = %s' % bw)
+        self.conf = self.conf.replace('BWIntraMin = 1000.0', 'BWIntraMin = %s' % bw)
+        self.conf = self.conf.replace('BWIntraMax = 4024.0', 'BWIntraMax = %s' % bw)
     
     def setAsNum(self, n):
-        self.conf.replace('N = 2', 'N = %s' % n)
+        self.conf = self.conf.replace('N = 2', 'N = %s' % n)
     
     def setRouterNum(self, n):
-        self.conf.replace('N = 32', 'N = %s' % n)
+        self.conf = self.conf.replace('N = 32', 'N = %s' % n)
     
     def generate(self, name):
         out_path = os.path.join(self.folder, name)
@@ -78,9 +78,13 @@ class simBrite:
         self.ns3_path = ns3_path if ns3_path else os.path.join(os.getcwd(), \
             'ns-3-sim', 'ns-3.27')
         os.chdir(rname)
+        os.mkdir('dat')
+        os.mkdir('log')
         self.brt = Briter(os.path.join(self.ns3_path, 'brite_conf'))
         self.bid = random.randint(0, 999)               # 3 digit
         self.mid = random.randint(99999999, 999999999)  # 9 digit
+        os.system('touch mid.txt')
+        self.mpath = os.path.join(self.root, 'mid.txt')
 
 
     def confBrite(self, inter_bw, n_as=None, n_leaf=None, prefix='TD_conf'):
@@ -109,7 +113,7 @@ class simBrite:
         desire_crate = min(c_rate, edge_bw)
         is_co = (desire_rate * n_normal + desire_crate * n_cross) > inter_bw
 
-        return is_co
+        return int(is_co)
 
 
     def runNs3(self, mid, tid, nums, rates, edge_bw, bpath = None, \
@@ -123,11 +127,17 @@ class simBrite:
                 'confFile':bpath}
         arg_str = ''
         for k in args:
-            arg_str += ' -%s=%s' % (k, args[k])
+            arg_str += '-%s=%s ' % (k, args[k])
         cmd = './waf --run "scratch/%s %s" > log_brite_%s.txt 2>&1' % \
             (program, arg_str, mid)
         print(cmd, '\n')
         os.system(cmd)
+        os.chdir(self.root)
+        cp_cmd = 'cp %s/*%s*dat dat' % (os.path.join(self.ns3_path, 'MboxStatistics'), mid)
+        cp2_cmd = 'cp %s/log_brite_%s.txt log' % (self.ns3_path, mid)
+        os.system(cp_cmd)
+        os.system(cp2_cmd)
+        os.chdir(self.ns3_path)
 
 
     def top(self, tStop=30):
@@ -156,8 +166,11 @@ class simBrite:
                             bpath=self.brt_path, tStop=tStop)
 
                         ftruth = 'MboxStatistics/bottleneck_%s.txt' % self.mid
-                        with open(ftruth, 'a') as f:
+                        with open(ftruth, 'w') as f:
                             f.write('%s %s' % (self.mid, is_co))
+                        with open(self.mpath, 'a') as f:
+                            f.write('%s %s %s %s %s' % (self.mid, n_flow, n_cross, \
+                                n_rate, c_rate))
                         self.mid += 1
 
                 self.bid += 1
@@ -217,6 +230,7 @@ def test_simBrite_unit():
     np = Process(target=tsb.runNs3, args=(1111, tsb.bid % 10, [4,1,0],\
         [200,400,600], 500,))
     print('- Running ns-3 ...')
+    np.start()
     time.sleep(15)
     assert 'log_brite_1111.txt' in test_ls(tsb.ns3_path)
     np.terminate()
@@ -230,14 +244,20 @@ def test_simBrite_unit():
 
 def test_simBrite_int():
     # test top() of simBrite
+    os.chdir('..')
+    assert os.getcwd()[-7:] == 'fluence'
     tsi = simBrite([1,2])
     mid = tsi.mid
     np = Process(target=tsi.top, args=(1,))
+    np.start()
     print('- Scanning the cases...')
-    np.join(120)
+    np.join()
 
     dat_path = os.path.join(tsi.ns3_path, 'MboxStatistics')
     assert 'bottleneck_%s.txt' % mid in test_ls(dat_path)
+    os.chdir(tsi.root)
+    assert 'AckLatency_%s_0.dat' % mid in test_ls('dat')
+    assert 'log_brite_%s.txt' % mid in test_ls('log')
 
     ans = input('- Is the running process normal? (y/n) ')
     if ans == 'y':
@@ -265,7 +285,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print_help()
     
-    opt_map = {'-r':'3:4', '-s':None, '-R':None, '-n':None, '-t'}
+    opt_map = {'-r':'3:4', '-s':None, '-R':None, '-n':None, '-t':30}
     cur_arg = None
     for arg in sys.argv[1:]:
         if arg in opt_map:
