@@ -6,15 +6,11 @@ settings and finally do the ns-3 simulation to collect data (mainly RTT).
 
 In detail, it will achieve the following
 
-0. Configure the environments
-    TODO: current requirements have some redundancy.
-
+0. Configure the environments;
 1. For ITZ simulations:
     1) Use topoSurfer.py to import topologies and parse them to XML files;
     2) Use confluentSim.py to generate settings and parallelize ns-3 
         simulations.
-    TODO: modify the default path value inside each script
-
 2. TODO For Brite simulations:
     1) TODO generate Brite configurations;
     2) Do the ns-3 simulations.
@@ -38,12 +34,12 @@ def test_ls(path=None):
 
 def printHelp():
     # print help message & exit
-    print('Usage: python %s [-s SAMPLE_NUM] [-c PROCESS_NUM] [-r MIN:MAX] [-p PART] \
+    print('Usage: python %s [-s SAMPLE_NUM] [-c PROCESS_NUM] [-r MIN:MAX] [-x XML_FILE] \
             [--run-only] [--dry-run] [-h]' % sys.argv[0])
     print('       SAMPLE_NUM:   Number of topologies samples (default is 30);')
     print('       PROCESS_NUM:  Number of processes for multiprocessing (default is 8);')
     print('       MIN:MAX:      Range of number of target flows (default is 7:8);')
-    print('       PART:         0/1/2: no partial/first half/second half of topologies. (default is 0).')
+    print('       XML_FILE:     XML file to run (default is all).')
     exit(1)
 
 
@@ -51,7 +47,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         printHelp()
 
-    opt_map = {'-s':30, '-c':8, '-r':'7:8', '-p':0}     # TODO: use option to run Brite or configure
+    opt_map = {'-s':30, '-c':8, '-r':'7:8', '-x':None}     # TODO: use option to run Brite or configure
     cur_option = None
     dry_run = False
     run_only = False                # should only be enabled when XML folder exists!
@@ -126,19 +122,21 @@ if __name__ == "__main__":
             exit(1)
 
     # confluentSim
-    n_part = opt_map['-p']
     os.chdir(root_folder)
-    n_core = opt_map['-c']
+    n_core = int(opt_map['-c'])
     n_min, n_max = [int(r) for r in opt_map['-r'].split(':')]
     assert 'xml' in test_ls('TopoSurfer')
     xml_folder = os.path.join(root_folder, 'TopoSurfer', 'xml')
     all_xmls = test_ls(xml_folder)
-    if not n_part:
+    if not opt_map['-x']:
         xmls = all_xmls
-    elif n_part == 1:
-        xmls = all_xmls[:len(all_xmls) // 2]
     else:
-        xmls = all_xmls[len(all_xmls) // 2:]
+        xi = int(opt_map['-x'])
+        try:
+            xmls = [all_xmls[xi]]
+        except:
+            print('-> XML index out of bound! Exit.')
+            exit(1)
 
     # parallelize among different confluentSim.py with same lock
     lock = Lock()
