@@ -34,7 +34,7 @@ def test_ls(path=None):
 
 def printHelp():
     # print help message & exit
-    print('Usage: python %s [-s SAMPLE_NUM] [-c PROCESS_NUM] [-r MIN:MAX] [-x XML_FILE] \
+    print('Usage: python %s [-s SAMPLE_NUM] [-c PROCESS_NUM] [-r MIN:MAX] [-x XML_FILE]\n \
             [--run-only] [--dry-run] [-h]' % sys.argv[0])
     print('       SAMPLE_NUM:   Number of topologies samples (default is 30);')
     print('       PROCESS_NUM:  Number of processes for multiprocessing (default is 8);')
