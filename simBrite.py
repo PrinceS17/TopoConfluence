@@ -58,6 +58,7 @@ class Briter:
 class simBrite:
     def __init__(self,
         N_range,
+        bid=None,
         sample=None,
         root_folder=None,
         ns3_path=None
@@ -76,7 +77,7 @@ class simBrite:
         os.mkdir('dat')
         os.mkdir('log')
         self.brt = Briter(os.path.join(self.ns3_path, 'brite_conf'))
-        self.bid = random.randint(0, 999)               # 3 digit
+        self.bid = bid if bid else random.randint(0, 999)
         self.mid = random.randint(99999999, 999999999)  # 9 digit
         os.system('touch mid.txt')
         self.mpath = os.path.join(self.root, 'mid.txt')
@@ -130,20 +131,58 @@ class simBrite:
         os.chdir(self.root)
         cp_cmd = 'cp %s/*%s*dat dat' % (os.path.join(self.ns3_path, 'MboxStatistics'), mid)
         cp2_cmd = 'cp %s/log_brite_%s.txt log' % (self.ns3_path, mid)
-        os.system(cp_cmd)
         os.system(cp2_cmd)
+        res = sp.getoutput(cp_cmd)
         os.chdir(self.ns3_path)
+        if res.find('cp: cannot stat ') != -1:
+            return False
+        return True
 
 
-    def top(self, tStop=30):
+    def loopRun(self, mid, bid, nums, rates, edge_bw, brt_path, \
+        is_co, tStop=30, lock=None):
+        # loop run ns-3 as a serial procedure, for multiprocessing
+        k = 2
+        path = brt_path
+        if lock:
+            lock.acquire()
+        print('--> Loop run %s/18: mid = %s' % (self.cnt, mid))
+        if lock:
+            lock.release()
+
+        while not self.runNs3(mid, bid, nums, rates, \
+            edge_bw, bpath=path, tStop=tStop):
+            print('--> Insufficient leaves: use k = %s' % k)
+            self.brt.setRouterNum(n_leaf * k)
+            path = self.brt.generate('LeavesAdded_%s.conf' % mid)      # test needed
+            k += 1
+            if k > 4:
+                print('--> Leave number is too large! Break loop.')
+                break
+        
+        ftruth = 'MboxStatistics/bottleneck_%s.txt' % mid
+        with open(ftruth, 'w') as f:
+            for i in range(nums[0]):
+                f.write('%s %s\n' % (i, is_co - 1))
+        print('mid path: %s' % self.mpath)
+        with open(self.mpath, 'a') as f:
+            f.write('%s %s %s\n' % (mid, nums[0], nums[1]))
+        
+
+
+    def top(self, tStop=30, segment=None):
         # call the tools above to simulate
         
+        segment = segment if segment else 2
         n_leaf = 32
         edge_bws = [50, 100, 500]
         inter_bws = [300, 600, 900]
         n_rate, c_rate = 100, 1000
         # N_range: expected 2,4,6
 
+        lock = Lock()
+        procs, p_tmp = [], []
+        self.cnt = 0
         for n_flow in range(self.N_min, self.N_max + 1):
 
             for inter_bw in inter_bws:
@@ -157,19 +196,22 @@ class simBrite:
                         rates = [n_rate, c_rate, 0]
                         is_co = self.getTruth(nums, rates, inter_bw, edge_bw)
                         os.chdir(self.ns3_path)
-                        self.runNs3(self.mid, self.bid % 20, nums, rates, edge_bw, \
-                            bpath=self.brt_path, tStop=tStop)
 
-                        ftruth = 'MboxStatistics/bottleneck_%s.txt' % self.mid
-                        with open(ftruth, 'w') as f:
-                            f.write('%s %s' % (self.mid, is_co))
-                        print('mid path: %s' % self.mpath)
-                        with open(self.mpath, 'a') as f:
-                            f.write('%s %s %s %s %s\n' % (self.mid, n_flow, n_cross, \
-                                n_rate, c_rate))
+                        p = Process(target=self.loopRun, args=(self.mid, self.bid, \
+                            nums, rates, edge_bw, self.brt_path, is_co, tStop, lock))
+                        procs.append(p)
                         self.mid += 1
-
                 self.bid += 1
+
+        for p in procs:
+            p_tmp.append(p)
+            self.cnt += 1
+            p.start()
+            if len(p_tmp) == segment:
+                for q in p_tmp:
+                    q.join()
+                p_tmp = []
+            time.sleep(15)
 
 
 def test_briter():
@@ -240,8 +282,9 @@ def test_simBrite_unit():
 
 def test_simBrite_int():
     # test top() of simBrite
-    os.chdir('..')
-    assert os.getcwd()[-7:] == 'fluence'
+    if os.getcwd()[-7:] != 'fluence':
+        os.chdir('..')
+        assert os.getcwd()[-7:] == 'fluence'
     tsi = simBrite([1,2])
     mid = tsi.mid
     np = Process(target=tsi.top, args=(1,))
@@ -264,24 +307,26 @@ def test_simBrite_int():
 
 
 def print_help():
-    print('Usage: python %s -r MIN:MAX -t TIME_DURATION -s SAMPLE ' % sys.argv[0])
-    print('                 -R ROOT_FOLDER -n NS3_PATH' % sys.argv[0])
+    print('Usage: python %s -r MIN:MAX -b BRITE_RANDOM_ID -c CORE_NUM \
+        [-t TIME_DURATION]' % sys.argv[0])
+    print('              [-s SAMPLE] [-R ROOT_FOLDER] [-n NS3_PATH]')
     exit(1)
 
 if __name__ == "__main__":
-    is_test = True
+    is_test = False
 
     if is_test:
         print('In test mode, all arguments ignored.')
         test_briter()
-        test_simBrite_unit()
+        # test_simBrite_unit()
         test_simBrite_int()
         exit(0)
 
     if len(sys.argv) < 2:
         print_help()
     
-    opt_map = {'-r':'3:4', '-s':None, '-R':None, '-n':None, '-t':30}
+    opt_map = {'-r':'3:4', '-s':None, '-R':None, '-n':None, '-t':30, \
+        '-b':None, '-c':2}
     cur_arg = None
     for arg in sys.argv[1:]:
         if arg in opt_map:
@@ -295,6 +340,6 @@ if __name__ == "__main__":
     
     num = [int(n) for n in opt_map['-r'].split(':')]
     tStop = int(opt_map['-t'])
-    simb = simBrite(num, opt_map['-s'], opt_map['-R'], opt_map['-n'])
-    simb.top()
+    simb = simBrite(num, int(opt_map['-b']), opt_map['-s'], opt_map['-R'], opt_map['-n'])
+    simb.top(segment=int(opt_map['-c']))
 
