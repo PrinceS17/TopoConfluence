@@ -67,8 +67,8 @@ class simBrite:
         self.sample = sample if sample else 'TD_DefaultWaxman.conf'
         if root_folder:
             os.chdir(root_folder)
-        rname = 'Brite_%s:%s_%s' % (N_range[0], N_range[1], \
-            time.strftime("%b-%d-%H:%M:%S"))
+        rname = 'Brite_%s:%s_%s_%s-%s' % (N_range[0], N_range[1], bid, \
+            time.strftime("%b-%d-%H:%M:%S"), random.randint(100, 999))
         os.mkdir(rname)
         self.root = os.path.join(os.getcwd(), rname)
         self.ns3_path = ns3_path if ns3_path else os.path.join(os.getcwd(), \
