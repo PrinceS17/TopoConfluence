@@ -140,7 +140,7 @@ class simBrite:
 
 
     def loopRun(self, mid, bid, nums, rates, edge_bw, brt_path, \
-        is_co, tStop=30, lock=None):
+        is_co, n_leaf, tStop=30, lock=None):
         # loop run ns-3 as a serial procedure, for multiprocessing
         k = 2
         path = brt_path
@@ -198,7 +198,7 @@ class simBrite:
                         os.chdir(self.ns3_path)
 
                         p = Process(target=self.loopRun, args=(self.mid, self.bid, \
-                            nums, rates, edge_bw, self.brt_path, is_co, tStop, lock))
+                            nums, rates, edge_bw, self.brt_path, is_co, n_leaf, tStop, lock))
                         procs.append(p)
                         self.mid += 1
                 self.bid += 1
