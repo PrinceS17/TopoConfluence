@@ -6,13 +6,8 @@ parameters like the number target flows. Each run consists of these settings:
     leaf nodes, BW), and tid;
 2. Specify the network parameters in ns-3, such as nNormal, nCross, etc;
 
-TODO:
-1. Integration test!
-2. Run ns-3 to check!
-
 
 TODO Things that need attention
-a. solution of Brite conf: generate by modifying an example?
 b. try the ns-3 in case of the error of insufficient leaf...
 c. scan the AS number, and change AS[1] to AS[n-1] in ns-3.
 
@@ -168,8 +163,9 @@ class simBrite:
                         ftruth = 'MboxStatistics/bottleneck_%s.txt' % self.mid
                         with open(ftruth, 'w') as f:
                             f.write('%s %s' % (self.mid, is_co))
+                        print('mid path: %s' % self.mpath)
                         with open(self.mpath, 'a') as f:
-                            f.write('%s %s %s %s %s' % (self.mid, n_flow, n_cross, \
+                            f.write('%s %s %s %s %s\n' % (self.mid, n_flow, n_cross, \
                                 n_rate, c_rate))
                         self.mid += 1
 
