@@ -149,12 +149,7 @@ class simBrite:
         print('--> Loop run %s/18: mid = %s' % (self.cnt, mid))
         if lock:
             lock.release()
-
-        ftruth = 'MboxStatistics/bottleneck_%s.txt' % mid
-        with open(ftruth, 'w') as f:
-            for i in range(nums[0]):
-                f.write('%s %s\n' % (i, is_co - 1))
-        
+  
         while not self.runNs3(mid, bid, nums, rates, \
             edge_bw, bpath=path, tStop=tStop):
             print('--> Insufficient leaves: use k = %s' % k)
@@ -165,7 +160,10 @@ class simBrite:
                 print('--> Leave number is too large! Break loop.')
                 break
         
-        
+        ftruth = 'MboxStatistics/bottleneck_%s.dat' % mid
+        with open(ftruth, 'w') as f:
+            for i in range(nums[0]):
+                f.write('%s %s\n' % (i, is_co - 1))
         print('mid path: %s' % self.mpath)
         with open(self.mpath, 'a') as f:
             f.write('%s %s %s\n' % (mid, nums[0], nums[1]))
