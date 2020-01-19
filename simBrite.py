@@ -160,7 +160,7 @@ class simBrite:
                 print('--> Leave number is too large! Break loop.')
                 break
         
-        ftruth = 'MboxStatistics/bottleneck_%s.txt' % mid
+        ftruth = 'MboxStatistics/bottleneck_%s.dat' % mid
         with open(ftruth, 'w') as f:
             for i in range(nums[0]):
                 f.write('%s %s\n' % (i, is_co - 1))
