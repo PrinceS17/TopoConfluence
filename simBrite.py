@@ -307,8 +307,7 @@ def test_simBrite_int():
 
 
 def print_help():
-    print('Usage: python %s -r MIN:MAX -b BRITE_RANDOM_ID -c CORE_NUM \
-        [-t TIME_DURATION]' % sys.argv[0])
+    print('Usage: python %s -r MIN:MAX -b BRITE_RANDOM_ID -c CORE_NUM [-t TIME_DURATION]' % sys.argv[0])
     print('              [-s SAMPLE] [-R ROOT_FOLDER] [-n NS3_PATH]')
     exit(1)
 
