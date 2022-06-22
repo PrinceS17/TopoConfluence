@@ -1,7 +1,7 @@
 fnss==0.8.2
 matplotlib==3.0.3
 networkx==2.4
-numpy==1.17.3
+numpy==1.22.0
 oauthlib==1.0.3
 psutil==5.6.7
 ptyprocess==0.5
